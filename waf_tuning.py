@@ -122,7 +122,7 @@ def parseAlert(current_alert, delim):
 				rule_type = re.search('Message: ([^\n])+', j)
 	 			print rule_type.group()
 			return
-	#		user_deug = raw_input("COULD NOT PARSE!!!! type \"quit\" to exit")
+	#		user_debug = raw_input("COULD NOT PARSE!!!! type \"quit\" to exit")
 	#		if user_debug == "quit":
 	#			sys.exit(2)
 		compositeKey = ruleID+ruleMSG+attack_part
