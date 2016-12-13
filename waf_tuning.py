@@ -25,8 +25,10 @@ def usage():
 	return
 
 def openFile():
-	path = raw_input("What is the location of your audit log file? ")
+	path = raw_input("What is the location of your audit log file? [/var/log/httpd/modsec_audit.log]")
 	#path = 'modsec_audit.log' #DEBUG for quick testing
+	if path is not None:
+		path = '/var/log/httpd/modsec_audit'
 	while (os.path.isfile(path) == False):
 		path = raw_input("No audit file seems to exist in that location.  Try again! ")
 	try:
@@ -178,7 +180,7 @@ def parseAlert(current_alert, delim):
 	return 
 
 def writeCSV(attackMatrix):
-	outFile = open("Tuning_Report"+time.strftime("%Y-%M-%d_%H-%M-%S")+".csv", "w")
+	outFile = open("Tuning_Report-"+time.strftime("%Y-%m-%d_%H-%M-%S")+".csv", "w")
 	writer = csv.writer(outFile, quoting=csv.QUOTE_ALL)
 	writer.writerow(['delimiter', 'sip', 'host', 'method', 'uri', 'ruleID', 'ruleMSG', 'attack_part', 'attack_location', 'raw_attack'])
 	for key in attackMatrix:
@@ -243,5 +245,3 @@ if a == True:
 	printMatrix(attackMatrix)
 if x == True:
 	writeCSV(attackMatrix)
-
-	
