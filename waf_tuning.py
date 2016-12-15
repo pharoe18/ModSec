@@ -22,12 +22,15 @@ def usage():
 	print "Usage: -a to print raw Attack Matrix to terminal"
 	print "Usage: -s or --summery to display the attack summery"
 	print "Usage: -h or --help to display this help message"
+	print "Usage: -p <path> or --path <path> to point to your modsec_audit.log file"
 	return
 
 def openFile():
-	path = raw_input("What is the location of your audit log file? [/var/log/httpd/modsec_audit.log]")
-	#path = 'modsec_audit.log' #DEBUG for quick testing
-	if path is not None:
+	if p != False :
+		path = p
+	else :	
+		path = raw_input("What is the location of your audit log file? [/var/log/httpd/modsec_audit.log]")
+	if path is None:
 		path = '/var/log/httpd/modsec_audit.log'
 	while (os.path.isfile(path) == False):
 		path = raw_input("No audit file seems to exist in that location.  Try again! ")
@@ -67,7 +70,7 @@ def findAlert(auditFile, delimList, c):
 
 def parseAlert(current_alert, delim):
 	count = 1
-	allAlerts = re.findall('Message: Warning|Access.*id \"\d+\".*msg \"[^\"]+', current_alert)
+	allAlerts = re.findall('Message: (?:Warning|Access).*id \"\d+\".*msg \"[^\"]+', current_alert)
 	for j in allAlerts:
 		message = "*"*100+"\n"
 		list_alert = re.split(delim,current_alert)
@@ -81,8 +84,8 @@ def parseAlert(current_alert, delim):
 			host = hostRegex.group(1)
 		else:
 			host = "none"
-		rule_type = re.search('Message: Warning|Access.*\. ([^"]\w+ \w+)', j)
-		rule_parse = re.search('Message: Warning|Access.*id \"(\d+)\".*msg \"([^\"]+)', j)
+		rule_type = re.search('Message: (?:Warning|Access).*\. ([^"]\w+ \w+)', j)
+		rule_parse = re.search('Message: (?:Warning|Access).*id \"(\d+)\".*msg \"([^\"]+)', j)
 		if rule_parse:
 			ruleID = rule_parse.group(1)
 			ruleMSG = rule_parse.group(2)
@@ -108,6 +111,8 @@ def parseAlert(current_alert, delim):
 					attack_location = location_parts[1]+"="
 				elif attack_part == "RESPONSE_BODY":
 					attack_location = "It's in the RESPONSE BODY.  Look there!"
+				elif attack_part == "ARGS_NAMES":
+					attack_location = location_parts[0]
 				else:
 					attack_location = location_parts[1]
 			elif rule_type.group(1) == "Match of":
@@ -137,7 +142,7 @@ def parseAlert(current_alert, delim):
 				message += "The pattern \"%s\" is located at %s\n" % (pattern, location)
 				#print message #DEBUG
 				if rule_type == "Pattern match" or rule_type == "Matched phrase":
-					attack_string = re.search(re.escape(attack_location)+"[^&\n]*", current_alert)
+					attack_string = re.search(re.escape(attack_location)+".+?(?=&|\n|\. )", current_alert)
 					if attack_string:
 						raw_attack = attack_string.group()
 						message += raw_attack+"\n"
@@ -160,7 +165,7 @@ def parseAlert(current_alert, delim):
 			message += "Rule: %s %s\n" % (ruleID, ruleMSG)
 			message += "The pattern \"%s\" is located at %s\n" % (pattern, location)
 			if rule_type == "Pattern match" or rule_type == "Matched phrase":
-				attack_string = re.search(re.escape(attack_location)+"[^&\n]*", current_alert)
+				attack_string = re.search(re.escape(attack_location)+".+?(?=&|\n|\. )", current_alert)
 				if attack_string:
 					raw_attack = attack_string.group()
 					message += raw_attack+"\n"
@@ -213,12 +218,13 @@ x = False
 a = False
 s = False
 c = False
+p = False
 attackMatrix = {}
 attackDetails = {}
 message = ""
 
 try:
-	opts, args = getopt.getopt(sys.argv[1:],'xc:r:ahs',["export","count=","rule=","help", "summery"])
+	opts, args = getopt.getopt(sys.argv[1:],'xc:r:p:ahs',["export","count=","rule=","path=","help", "summery"])
 except getopt.GetoptError:
 	usage()
 	sys.exit(2)
@@ -236,6 +242,8 @@ for opt, arg in opts:
 		a = True
 	if opt in ("-s","--summery"):
 		s = True
+	if opt in ("-p","--path"):
+		p = arg
 
 auditFile = openFile()
 delimList = findDelims(auditFile)
