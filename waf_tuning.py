@@ -28,7 +28,7 @@ def openFile():
 	path = raw_input("What is the location of your audit log file? [/var/log/httpd/modsec_audit.log]")
 	#path = 'modsec_audit.log' #DEBUG for quick testing
 	if path is not None:
-		path = '/var/log/httpd/modsec_audit'
+		path = '/var/log/httpd/modsec_audit.log'
 	while (os.path.isfile(path) == False):
 		path = raw_input("No audit file seems to exist in that location.  Try again! ")
 	try:
@@ -67,7 +67,7 @@ def findAlert(auditFile, delimList, c):
 
 def parseAlert(current_alert, delim):
 	count = 1
-	allAlerts = re.findall('Message: Warning.*id \"\d+\".*msg \"[^\"]+', current_alert)
+	allAlerts = re.findall('Message: Warning|Access.*id \"\d+\".*msg \"[^\"]+', current_alert)
 	for j in allAlerts:
 		message = "*"*100+"\n"
 		list_alert = re.split(delim,current_alert)
@@ -81,8 +81,8 @@ def parseAlert(current_alert, delim):
 			host = hostRegex.group(1)
 		else:
 			host = "none"
-		rule_type = re.search('Message: Warning\. ([^"]\w+ \w+)', j)
-		rule_parse = re.search('Message: Warning.*id \"(\d+)\".*msg \"([^\"]+)', j)
+		rule_type = re.search('Message: Warning|Access.*\. ([^"]\w+ \w+)', j)
+		rule_parse = re.search('Message: Warning|Access.*id \"(\d+)\".*msg \"([^\"]+)', j)
 		if rule_parse:
 			ruleID = rule_parse.group(1)
 			ruleMSG = rule_parse.group(2)
