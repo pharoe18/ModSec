@@ -4,7 +4,7 @@ import re
 import sys
 import csv
 import time
-from urllib import urlencode
+from urllib import urlencode, unquote
 import getopt
 ''' To DO:
 Accept Compressed Files 
@@ -30,7 +30,7 @@ def openFile():
 		path = p
 	else :	
 		path = raw_input("What is the location of your audit log file? [/var/log/httpd/modsec_audit.log]")
-	if path is None:
+	if path == "":
 		path = '/var/log/httpd/modsec_audit.log'
 	while (os.path.isfile(path) == False):
 		path = raw_input("No audit file seems to exist in that location.  Try again! ")
@@ -145,7 +145,7 @@ def parseAlert(current_alert, delim):
 					attack_string = re.search(re.escape(attack_location)+".+?(?=&|\n|\. )", current_alert)
 					if attack_string:
 						raw_attack = attack_string.group()
-						message += raw_attack+"\n"
+						message += unquote(raw_attack).decode('utf8')+"\n"
 					else:
 						raw_attack = ""
 						message += raw_attack+"\n"
@@ -168,7 +168,7 @@ def parseAlert(current_alert, delim):
 				attack_string = re.search(re.escape(attack_location)+".+?(?=&|\n|\. )", current_alert)
 				if attack_string:
 					raw_attack = attack_string.group()
-					message += raw_attack+"\n"
+					message += unquote(raw_attack).decode('utf8')+"\n"
 				else:
 					raw_attack = ""
 					message += raw_attack+"\n"
