@@ -76,8 +76,12 @@ def parseAlert(current_alert, delim):
 		list_alert = re.split(delim,current_alert)
 		sipRegex = re.search(r'(\d+\.\d+\.\d+\.\d+)',list_alert[1])
 		sip = sipRegex.group()
-		methodUriRegex = re.search(r'([A-Z]+) (.+?(?=\sHTTP)) HTTP',list_alert[2])
-		method = methodUriRegex.group(1)
+		methodUriRegex = re.search(r'([A-Za-z]+) (.+?(?=\sHTTP)) HTTP',list_alert[2])
+		try:
+			method = methodUriRegex.group(1)
+		except:
+			methodUriRegex = re.search(r'(.+) (.+?(?=\sHTTP)) HTTP',list_alert[2])
+			method = methodUriRegex.group(1)
 		uri = methodUriRegex.group(2)
 		hostRegex = re.search(r'Host: ([^\s]+)', list_alert[2])
 		if hostRegex:
@@ -97,7 +101,10 @@ def parseAlert(current_alert, delim):
 				rule_type = "Matched phrase"
 				location_parts = re.split(r':',location)
 				attack_part = location_parts[0]
-				attack_location = location_parts[1]
+				if attack_part == "QUERY_STRING":
+					attack_location = uri
+				else:
+					attack_location = location_parts[1]
 			elif rule_type.group(1) == "Pattern match":
 				check_phrase = re.search('Pattern match "(.*)" at (.+?(?=\.\s))', j)
 				pattern = check_phrase.group(1)
@@ -105,7 +112,7 @@ def parseAlert(current_alert, delim):
 				rule_type = "Pattern match"
 				location_parts = re.split(r':',location)
 				attack_part = location_parts[0]
-				if attack_part == "REQUEST_FILENAME":
+				if (attack_part == "REQUEST_FILENAME" or attack_part == "QUERY_STRING"):
 					attack_location = uri
 				elif attack_part == "ARGS":
 					attack_location = location_parts[1]+"="
@@ -122,6 +129,24 @@ def parseAlert(current_alert, delim):
 				rule_type = "Match of"
 				attack_part = ""
 				attack_location = ""
+				raw_attack = ""
+			elif rule_type.group(1) == "Operator GT":
+				check_phrase = re.search('Operator GT matched \d* at (.+?(?=\.\s))', j)
+				pattern = check_phrase.group(1)
+				location = pattern
+				rule_type = "Operator GT"
+				location_parts = re.split(r':',location)
+				attack_part = location_parts[1]
+				attack_location = location_parts[0]
+				raw_attack = ""
+			elif rule_type.group(1) == "Operator LT":
+				check_phrase = re.search('Operator LT matched \d* at (.+?(?=\.\s))', j)
+				pattern = check_phrase.group(1)
+				location = pattern
+				rule_type = "Operator LT"
+				location_parts = re.split(r':',location)
+				attack_part = location_parts[1]
+				attack_location = location_parts[0]
 				raw_attack = ""
 		else:
 			if s == True and r == "all":
@@ -145,7 +170,10 @@ def parseAlert(current_alert, delim):
 					attack_string = re.search(re.escape(attack_location)+".+?(?=&|\n|\. )", current_alert)
 					if attack_string:
 						raw_attack = attack_string.group()
-						message += unquote(raw_attack).decode('utf8')+"\n"
+						try:
+							message += unquote(raw_attack).decode('utf8')+"\n"
+						except:
+							message += unquote(raw_attack)+"\n"
 					else:
 						raw_attack = ""
 						message += raw_attack+"\n"
@@ -168,7 +196,10 @@ def parseAlert(current_alert, delim):
 				attack_string = re.search(re.escape(attack_location)+".+?(?=&|\n|\. )", current_alert)
 				if attack_string:
 					raw_attack = attack_string.group()
-					message += unquote(raw_attack).decode('utf8')+"\n"
+					try:
+						message += unquote(raw_attack).decode('utf8')+"\n"
+					except:
+						message += unquote(raw_attack)+"\n"
 				else:
 					raw_attack = ""
 					message += raw_attack+"\n"
